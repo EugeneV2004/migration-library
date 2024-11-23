@@ -37,10 +37,4 @@ public class PropertiesUtils {
             throw new RuntimeException("File not found: " + propertyPath, e);
         }
     }
-
-    public static void main(String[] args) {
-        PropertiesUtils propertiesUtils = new PropertiesUtils("application.properties");
-
-        System.out.println(propertiesUtils.getProperty("db.username"));
-    }
 }
