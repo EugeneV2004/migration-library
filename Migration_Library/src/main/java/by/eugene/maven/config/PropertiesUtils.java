@@ -12,10 +12,11 @@ public class PropertiesUtils {
     private final Properties properties = new Properties();
 
     /**
-     * @param propertyPath Path to properties file inside classpath
+     * @param propertiesFilePath Path to properties file inside classpath
      */
-    public PropertiesUtils(String propertyPath) {
-        this.init(propertyPath);
+    public PropertiesUtils(String propertiesFilePath) {
+        log.info("Initializing PropertiesUtils with file: {}", propertiesFilePath);
+        this.init(propertiesFilePath);
     }
 
     /**
@@ -26,15 +27,17 @@ public class PropertiesUtils {
         return this.properties.getProperty(key);
     }
 
-    private void init(String propertyPath) {
-        try (InputStream inputStream = PropertiesUtils.class.getClassLoader().getResourceAsStream(propertyPath)) {
-            if (inputStream == null) {
-                throw new IOException("File not found: " + propertyPath);
+    private void init(String propertiesFilePath) {
+        try (InputStream propertiesStream = PropertiesUtils.class.getClassLoader().getResourceAsStream(propertiesFilePath)) {
+            if (propertiesStream == null) {
+                log.error("Properties file '{}' not found in classpath", propertiesFilePath);
+                throw new IOException("Unable to process properties file");
             }
-            properties.load(inputStream);
+            properties.load(propertiesStream);
+            log.info("Properties file '{}' loaded successfully", propertiesFilePath);
         } catch (IOException e) {
-            log.error("Error while loading property file");
-            throw new RuntimeException("File not found: " + propertyPath, e);
+            log.error("Error loading properties file '{}'", propertiesFilePath, e);
+            throw new RuntimeException("Error loading properties file", e);
         }
     }
 }
