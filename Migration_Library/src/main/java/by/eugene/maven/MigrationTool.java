@@ -13,6 +13,28 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Main entry point for the migration tool.
+ * <p>
+ * The MigrationTool class manages the migration process by interacting with the database and executing
+ * migration commands (migrate, rollback, and information). It initializes necessary components like
+ * the ConnectionManager, MigrationExecutor, and MigrationManager. Users can issue commands from the console
+ * to perform various operations related to database migrations.
+ * </p>
+ *
+ * <p><b>Usage:</b></p>
+ * <pre>
+ * MigrationTool tool = new MigrationTool("jdbc:mysql://localhost:3306/db", "user", "password", "migrations");
+ * tool.run();
+ * </pre>
+ * <p>This tool supports commands like:</p>
+ * <ul>
+ *   <li>info: Displays migration information.</li>
+ *   <li>migrate: Executes pending migrations.</li>
+ *   <li>rollback: Rolls back migrations to a specific version.</li>
+ *   <li>exit: Exits the tool.</li>
+ * </ul>
+ */
 @Slf4j
 public class MigrationTool {
     private final MigrationManager migrationManager;
@@ -21,6 +43,18 @@ public class MigrationTool {
 
     private final List<Command> commands;
 
+    /**
+     * Initializes the MigrationTool with the provided database connection parameters and migration directory.
+     * <p>
+     * This constructor sets up the necessary components for the migration tool, including initializing
+     * the database connection, migration manager, and migration executor. It also registers the available commands.
+     * </p>
+     *
+     * @param url the database connection URL
+     * @param username the database username
+     * @param password the database password
+     * @param migrationDirectory the directory where migration files are located
+     */
     public MigrationTool(String url, String username, String password, String migrationDirectory) {
         log.info("Initializing MigrationTool with URL: {}, Username: {}, Migration Directory: {}",
                 url, username, migrationDirectory);
@@ -39,6 +73,13 @@ public class MigrationTool {
         log.info("MigrationTool initialized successfully.");
     }
 
+    /**
+     * Runs the migration tool, starting the command input loop.
+     * <p>
+     * This method prompts the user for commands in a loop and processes them accordingly. It waits for commands
+     * like "info", "migrate", "rollback", and "exit". If an unrecognized command is entered, it provides feedback to the user.
+     * </p>
+     */
     public void run() {
         System.out.println("==MIGRATION APP==\nStarted and waiting for commands (info, migrate, rollback, exit):");
         waitAndRunCommands();
