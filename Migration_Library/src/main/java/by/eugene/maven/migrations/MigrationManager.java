@@ -174,6 +174,7 @@ public class MigrationManager {
             statement.getResultSet().next();
             return statement.getResultSet().getInt(1);
         } catch (SQLException e) {
+            log.error("Error retrieving the current database version.", e);
             throw new RuntimeException(e);
         }
 
@@ -253,7 +254,7 @@ public class MigrationManager {
         try {
             connection.createStatement().execute(historyTableSchema);
         } catch (SQLException e) {
-            log.error("", e);
+            log.error("Error creating history table.", e);
             throw new RuntimeException(e);
         }
     }

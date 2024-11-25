@@ -42,6 +42,7 @@ public class MigrationFileReader {
      * @throws RuntimeException if an error occurs while reading the file or parsing the SQL commands
      */
     public static List<String> readMigrationsFromFile(String filePath) {
+        log.info("Reading migration commands from file: {}", filePath);
         return readSqlFromFile(filePath, MIGRATION_DELIMITER);
     }
 
@@ -57,6 +58,7 @@ public class MigrationFileReader {
      * @throws RuntimeException if an error occurs while reading the file or parsing the SQL commands
      */
     public static List<String> readRollbacksFromFile(String filePath) {
+        log.info("Reading rollback commands from file: {}", filePath);
         return readSqlFromFile(filePath, ROLLBACK_DELIMITER);
     }
 
@@ -71,22 +73,33 @@ public class MigrationFileReader {
      * @throws RuntimeException if the migration version cannot be extracted or if the file is not found
      */
     public static int readMigrationVersion(String filePath) {
+        log.info("Extracting migration version from file: {}", filePath);
         try (InputStream inputStream = MigrationFileReader.class.getClassLoader().getResourceAsStream(filePath)) {
             if (inputStream == null) {
+                log.error("File not found: {}", filePath);
                 throw new IOException("File %s not found".formatted(filePath));
             }
-            String migrationVersionLine = new Scanner(inputStream).nextLine();
+            String firstLine = new Scanner(inputStream).nextLine().trim();
+            log.debug("First line of the file: {}", firstLine);
 
-            Pattern pattern = Pattern.compile("\\d");
-            Matcher matcher = pattern.matcher(migrationVersionLine);
-            if(!matcher.find()) {
+            Pattern pattern = Pattern.compile("\\d+");
+            Matcher matcher = pattern.matcher(firstLine);
+
+            if (!matcher.find()) {
+                log.error("Migration version not found in file: {}", filePath);
                 throw new RuntimeException("No migration number provided in file: " + filePath);
             }
-            return Integer.parseInt(matcher.group());
+
+            int version = Integer.parseInt(matcher.group());
+            log.info("Migration version extracted: {}", version);
+            return version;
+
         } catch (IOException e) {
+            log.error("Error reading file: {}", filePath, e);
             throw new RuntimeException(e);
         }
     }
+
 
     /**
      * Retrieves the SQL content from the file stream, based on the provided delimiter.
@@ -100,36 +113,41 @@ public class MigrationFileReader {
      * @return the SQL content as a string before the delimiter
      */
     public static String getSql(InputStream fileStream, String delimiter) {
-        Scanner scanner = new Scanner(fileStream);
-        scanner.useDelimiter(delimiter);
+        log.debug("Parsing SQL content with delimiter: {}", delimiter);
+        Scanner scanner = new Scanner(fileStream).useDelimiter(delimiter);
+
         String sql = null;
-        if(delimiter.equals(ROLLBACK_DELIMITER)) {
-            scanner.next();
-            sql = scanner.next();
+        if (delimiter.equals(ROLLBACK_DELIMITER)) {
+            if (scanner.hasNext()) scanner.next(); // Skip migration part
+            sql = scanner.hasNext() ? scanner.next() : "";
         } else {
-            scanner.next();
-            sql = scanner.next()
-                    .split(ROLLBACK_DELIMITER)[0];
+            if (scanner.hasNext()) sql = scanner.next(); // Get migration part
         }
 
+        log.debug("SQL content extracted before splitting by rollback: {}", sql);
         return sql;
     }
 
-    private static List<String> readSqlFromFile (String filePath, String delimiter) {
+    private static List<String> readSqlFromFile(String filePath, String delimiter) {
         try (InputStream inputStream = MigrationFileReader.class.getClassLoader().getResourceAsStream(filePath)) {
             if (inputStream == null) {
+                log.error("File not found: {}", filePath);
                 throw new IOException("File %s not found".formatted(filePath));
             }
 
             String sql = getSql(inputStream, delimiter);
+            log.debug("Raw SQL read from file: {}", sql);
 
             List<String> sqlCommands = Arrays.stream(sql.split(";"))
                     .map(String::trim)
                     .filter(command -> !command.isBlank())
                     .toList();
 
+            log.info("Parsed {} SQL commands from file: {}", sqlCommands.size(), filePath);
             return sqlCommands;
+
         } catch (IOException e) {
+            log.error("Error reading or parsing file: {}", filePath, e);
             throw new RuntimeException(e);
         }
     }
